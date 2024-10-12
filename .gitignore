@@ -1,0 +1,24 @@
+# Ignore node_modules directory
+node_modules/
+
+# Ignore Python cache files
+__pycache__/
+*.pyc
+
+# Ignore log files
+*.log
+
+.venv/
+
+# Ignore macOS system files
+.DS_Store
+
+# Ignore IDE files
+.idea/
+.vscode/
+
+*.pkl
+
+sample/
+uploads/
+images/
