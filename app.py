@@ -1,25 +1,28 @@
-import tensorflow
+import tensorflow as tf
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.layers import GlobalMaxPooling2D
-from tensorflow.keras.applications.resnet50 import ResNet50,preprocess_input
+from tensorflow.keras.applications.resnet50 import ResNet50, preprocess_input
 import numpy as np
 from numpy.linalg import norm
-import os
+import pandas as pd
 from tqdm import tqdm
+import requests
+from io import BytesIO
 import pickle
 
-model = ResNet50(weights='imagenet',include_top=False,input_shape=(224,224,3))
+# Load the pre-trained ResNet50 model
+model = ResNet50(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
 model.trainable = False
 
-model = tensorflow.keras.Sequential([
+model = tf.keras.Sequential([
     model,
     GlobalMaxPooling2D()
 ])
 
-#print(model.summary())
-
-def extract_features(img_path,model):
-    img = image.load_img(img_path,target_size=(224,224))
+def extract_features(img_url, model):
+    # Load image from URL
+    response = requests.get(img_url)
+    img = image.load_img(BytesIO(response.content), target_size=(224, 224))
     img_array = image.img_to_array(img)
     expanded_img_array = np.expand_dims(img_array, axis=0)
     preprocessed_img = preprocess_input(expanded_img_array)
@@ -28,15 +31,18 @@ def extract_features(img_path,model):
 
     return normalized_result
 
-filenames = []
+csv_file = './images.csv'
+df = pd.read_csv(csv_file)
 
-for file in os.listdir('images'):
-    filenames.append(os.path.join('images',file))
+# Ensure that the CSV has a column with the image URLs (assuming it's named 'image_url')
+filenames = df['link'].tolist()
 
 feature_list = []
 
+# Extract features for each image URL
 for file in tqdm(filenames):
-    feature_list.append(extract_features(file,model))
+    feature_list.append(extract_features(file, model))
 
-pickle.dump(feature_list,open('embeddings.pkl','wb'))
-pickle.dump(filenames,open('filenames.pkl','wb'))
+# Save the embeddings and filenames
+pickle.dump(feature_list, open('embeddings.pkl', 'wb'))
+pickle.dump(filenames, open('filenames.pkl', 'wb'))
